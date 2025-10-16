@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { environment } from '@environments/environment';
 import { GiphyResponse } from '../interfaces/giphy.interfaces';
 import { Gif } from '../interfaces/gif.interface';
@@ -14,10 +14,19 @@ export class GifService {
   trendingGifs = signal<Gif[]>([]);
   trendingGifsLoading = signal(true);
 
-  searchHistory = signal<Record<string,Gif[]>>({});
+  searchHistory = signal<Record<string,Gif[]>>(this.loadFromLocalStorage());
   searchHistoryKeys = computed(()=> Object.keys(this.searchHistory()));
 
 
+  saveToLocalStorage = effect(()=>{
+    //al cambiar esta senial, se dispara el efecto
+    localStorage.setItem('history', JSON.stringify(this.searchHistory()))
+  })
+
+  loadFromLocalStorage(): Record<string,Gif[]>{
+    const history = localStorage.getItem('history');
+    return history ? JSON.parse(history) : {};
+  }
 
   constructor(){
     this.loadTrendingGifs();
@@ -59,6 +68,7 @@ export class GifService {
           [query.toLowerCase()]:items,
         }))
       })
+
     )
   }
 
